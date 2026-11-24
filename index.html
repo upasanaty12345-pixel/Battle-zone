@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101827"><title>Battle Zone: Ultimate 2D</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1d3150,#0b1220 72%);color:#f4f7fb;font-family:system-ui,Arial,sans-serif;display:flex;justify-content:center;min-height:100vh}
+main{width:min(100%,1180px);padding:10px}header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}h1{font-size:clamp(21px,4vw,29px);margin:3px 0}.muted{color:#aebbd0;font-size:11px}
+.topstats,.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}.stat{background:#1b2a40;border:1px solid #3a506c;border-radius:11px;padding:7px 9px}.stat small{display:block;color:#aebbd0;font-size:10px;text-transform:uppercase}.stat b{font-size:17px}
+.setup{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:9px 0}.setup label{font-size:10px;color:#aebbd0;display:block;margin-bottom:3px}.setup select{width:100%;padding:9px 6px;border-radius:9px;border:1px solid #465f7d;background:#1b2a40;color:white;font-weight:700}
+canvas{width:100%;height:auto;display:block;aspect-ratio:4/3;background:#183b31;border:2px solid #47617a;border-radius:15px;touch-action:none;box-shadow:0 12px 35px #0007}
+.controls{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:9px;align-items:center}.pad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,43px);gap:4px}button{border:1px solid #49617c;border-radius:11px;background:linear-gradient(#304763,#20324a);color:white;font-weight:800;font-size:14px;padding:10px 8px;touch-action:manipulation;box-shadow:0 3px 0 #101a2b}button:active{transform:translateY(2px);box-shadow:none}.actions{display:flex;gap:5px}.actions button{min-width:65px;min-height:49px}.fire{background:linear-gradient(#a43e4c,#762b3b)}.dash{background:linear-gradient(#286d9a,#194768)}.reload{background:linear-gradient(#8c6a2b,#5c461d)}
+.menus{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}.menus button{background:#263b58}.note{font-size:10px;color:#9eacc0;line-height:1.4;margin:8px 2px}
+.overlay{position:fixed;inset:0;background:#07101bdc;display:grid;place-items:center;padding:14px;z-index:5}.dialog{width:min(460px,100%);max-height:90vh;overflow:auto;background:linear-gradient(145deg,#223652,#121d30);border:1px solid #58708c;border-radius:19px;padding:20px;text-align:center;box-shadow:0 25px 80px #000a}.dialog h2{margin:3px 0 8px;font-size:26px}.dialog p{color:#c1cde0;font-size:13px;line-height:1.45}.dialog button{margin:5px 3px;background:linear-gradient(90deg,#1688a9,#2867b6);border:0}.hidden{display:none!important}.modalrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px;margin:6px 0;background:#17263b;border:1px solid #354b67;border-radius:10px;text-align:left;font-size:12px}.modalrow button{margin:0;min-width:80px}.smallbtn{padding:7px 10px;font-size:11px}.gold{color:#ffd166}
+.menu-dialog{width:min(520px,100%);padding:26px 22px;background:radial-gradient(circle at top,#304c70,#121d30 72%);border-color:#7894b8}
+.menu-kicker,.wave-kicker{font-size:11px;letter-spacing:3px;font-weight:900;color:#ffd166;margin-bottom:8px}
+.menu-dialog h2{font-size:clamp(30px,7vw,44px);letter-spacing:1px;text-shadow:0 4px 18px #0008}
+.menu-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0 12px}
+.menu-actions button{margin:0;min-height:48px}
+.menu-actions button:last-child{grid-column:1/-1}
+.start-main{width:100%;min-height:58px;font-size:19px!important;letter-spacing:1px;background:linear-gradient(90deg,#e3a52e,#c45a30)!important;box-shadow:0 5px 0 #713b26!important}
+.menu-foot{font-size:12px;color:#b9c9dc;margin-top:16px}
+.wave-dialog{border:2px solid #f4ce68;background:radial-gradient(circle at top,#4b3a22,#141d2b 72%);width:min(560px,100%)}
+.wave-dialog h2{font-size:clamp(32px,8vw,52px);color:#ffe17a;text-shadow:0 0 22px #f2a52c88;letter-spacing:1px}
+.wave-dialog p{font-size:16px}
+@media(max-width:520px){.menu-actions{grid-template-columns:1fr}.menu-actions button:last-child{grid-column:auto}.menu-dialog{padding:22px 16px}}
+@media(max-width:520px){main{padding:7px}.stat{padding:6px}.stat b{font-size:15px}.setup{gap:4px}.setup select{font-size:11px}.controls{grid-template-columns:1fr}.pad{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,40px)}.actions button{flex:1;min-width:0}.menus button{font-size:11px;padding:9px 4px}}
+
+/* BATTLE ZONE VISUAL OVERHAUL */
+:root{color-scheme:dark}
+body{
+ background:
+ radial-gradient(ellipse at 50% -15%,rgba(41,115,174,.34),transparent 48%),
+ linear-gradient(145deg,#07101e 0%,#0b1728 48%,#111b2b 100%);
+}
+main{width:min(100%,1280px);padding:14px 18px 24px}
+header{
+ padding:13px 16px;border:1px solid #385879;border-radius:16px;
+ background:linear-gradient(110deg,rgba(24,48,75,.96),rgba(11,25,43,.96));
+ box-shadow:0 12px 35px #0005,inset 0 1px #ffffff12;
+}
+header h1{font-size:clamp(24px,4vw,34px);letter-spacing:2px;text-shadow:0 0 18px #4db8ff66}
+header .muted{font-size:12px;line-height:1.65}
+.setup{padding:10px;border:1px solid #2d4967;border-radius:14px;background:#101f32;margin-top:12px}
+.setup select{min-height:42px;background:#172b43;border-color:#4a7095}
+.hud{gap:10px;margin:12px 0}
+.stat{
+ border:1px solid #385a7a;border-radius:13px;padding:10px 12px;
+ background:linear-gradient(145deg,#1b3551,#101e31);
+ box-shadow:0 7px 18px #0003,inset 0 1px #ffffff0d;
+}
+.stat small{font-size:10px;letter-spacing:1.2px;color:#a9c7e5}
+.stat b{font-size:21px;text-shadow:0 0 12px #68c5ff55}
+canvas{
+ width:100%;height:auto;aspect-ratio:4/3;max-height:calc(100vh - 245px);
+ background:#102d2b;border:2px solid #537b9c;border-radius:17px;
+ box-shadow:0 0 0 4px #14273a,0 18px 45px #0009,0 0 28px #48a9e633;
+}
+.controls{margin-top:15px;padding:12px;border:1px solid #2c4966;border-radius:16px;background:linear-gradient(120deg,#13263c,#0d1b2c)}
+.pad button,.actions button,.menus button{border-radius:13px;min-height:48px}
+.pad button{background:linear-gradient(160deg,#365a7d,#1b3049);border-color:#6286a8;font-size:18px}
+.actions button{min-height:54px;font-size:14px;letter-spacing:.5px}
+.fire{background:linear-gradient(145deg,#e15c60,#8f2d3c)!important}
+.dash{background:linear-gradient(145deg,#35a6d5,#20527f)!important}
+.reload{background:linear-gradient(145deg,#d5a447,#795321)!important}
+.menus{gap:10px;margin-top:11px}
+.menus button{background:linear-gradient(145deg,#284866,#172b43);border-color:#547797;min-height:45px}
+.note{font-size:11px;color:#9bb4cc;text-align:center;margin:12px 4px}
+.dialog{
+ border:1px solid #6486a8;
+ background:radial-gradient(ellipse at 50% 0%,#355b7d 0%,#1a2d45 48%,#0c1728 100%);
+ box-shadow:0 25px 90px #000d,0 0 40px #47b9ff24;
+}
+.menu-dialog{width:min(560px,100%);padding:30px 26px}
+.menu-kicker{color:#f8cf6a;letter-spacing:4px;font-size:12px}
+.menu-dialog h2{font-size:clamp(34px,8vw,54px);letter-spacing:3px;color:#f5f8ff;text-shadow:0 0 22px #53baff88}
+.menu-dialog p{font-size:14px;color:#c5d7e8}
+.menu-actions{gap:10px;margin:22px 0 15px}
+.menu-actions button{
+ min-height:54px;border:1px solid #6487a8;
+ background:linear-gradient(145deg,#2b5276,#172b43);
+ font-size:13px;letter-spacing:.4px;
+}
+.menu-actions button:last-child{grid-column:1/-1}
+.start-main{
+ min-height:62px!important;border:1px solid #ffe09a!important;
+ background:linear-gradient(100deg,#f0bd4e,#c66c32)!important;
+ color:#1b1b22!important;font-size:20px!important;font-weight:1000!important;
+ letter-spacing:1.5px!important;box-shadow:0 6px 0 #784523,0 0 24px #ffbd4c44!important;
+}
+.menu-foot{font-size:13px;letter-spacing:.5px;color:#c4d7e9}
+.wave-dialog{border:2px solid #f1cb69;background:radial-gradient(ellipse at top,#57431f,#192337 75%)}
+.wave-dialog h2{color:#ffe28a;text-shadow:0 0 26px #ffbd42aa}
+.modalrow{background:#132840;border-color:#42617e}
+@media(min-width:850px){
+ main{padding:18px 24px 30px}
+ canvas{max-height:68vh}
+ .controls{grid-template-columns:1fr auto}
+}
+@media(max-width:520px){
+ main{padding:7px}
+ header{padding:10px}
+ .stat{padding:8px 6px}
+ .stat b{font-size:17px}
+ canvas{max-height:none}
+ .controls{padding:8px}
+ .actions button{font-size:12px}
+ .menu-dialog{padding:24px 16px}
+}
+
+
+/* Reference-inspired original lobby and victory presentation */
+body{background:#050a12}
+main{width:min(100%,1200px);padding:10px}
+canvas{aspect-ratio:16/9;border-radius:5px;border:2px solid #426b8d;background:#281e39}
+.overlay{background:rgba(2,7,17,.94);padding:10px}
+.lobby-overlay{background:linear-gradient(135deg,rgba(4,13,30,.96),rgba(8,34,62,.95)),radial-gradient(circle at 50% 45%,#2189bb,transparent 60%)}
+.lobby{width:min(1100px,100%);height:min(680px,94vh);min-height:510px;overflow:hidden;position:relative;border:1px solid #5ca6d1;border-radius:10px;background:
+ radial-gradient(ellipse at 50% 38%,rgba(75,195,238,.65),transparent 36%),
+ radial-gradient(ellipse at 50% 70%,rgba(22,87,153,.95),transparent 60%),
+ linear-gradient(130deg,#0b2749,#14558a 50%,#092747);
+ box-shadow:0 20px 80px #000c,inset 0 0 60px #57cfff33;color:#f4faff;display:flex;flex-direction:column}
+.lobby:before{content:"";position:absolute;inset:0;opacity:.18;background-image:linear-gradient(115deg,transparent 46%,#9ce8ff 47%,transparent 48%),linear-gradient(25deg,transparent 49%,#b7efff 50%,transparent 51%);background-size:150px 120px;pointer-events:none}
+.lobby-top{height:54px;display:flex;align-items:center;gap:8px;padding:6px 12px;background:linear-gradient(90deg,#071a32dd,#102f50dd);border-bottom:1px solid #79c7e655;z-index:1}
+.rank{display:flex;align-items:center;gap:7px;padding:4px 12px;border-right:1px solid #83b9d655;min-width:130px}
+.rank-icon{font-size:25px;color:#5ac9ff}.gold-icon{color:#ffd45b}
+.rank small,.rank b{display:block}.rank small{font-size:9px;color:#a9cbe1;letter-spacing:1px}.rank b{font-size:12px}
+.rank i{height:5px;width:35px;background:linear-gradient(90deg,#54d7ff 60%,#344c65 60%);margin-left:auto}
+.wallet{margin-left:auto;display:flex;gap:18px;font-size:14px}.wallet span{padding:6px 10px;background:#102e4c;border:1px solid #5d8caf;border-radius:5px}
+.lobby-content{flex:1;min-height:0;display:grid;grid-template-columns:180px 1fr 190px;gap:12px;padding:15px 14px 6px;position:relative;z-index:1}
+.lobby-label{font-weight:1000;font-size:14px;letter-spacing:1px;margin:2px 0 9px;text-shadow:0 2px 4px #000}
+.lobby-left,.lobby-right{display:flex;flex-direction:column;gap:9px;z-index:2}
+.lobby-tile{color:white;text-align:left;border:1px solid #91d9f2aa;border-radius:6px;background:linear-gradient(120deg,#143c63eF,#0b2746ee);box-shadow:0 5px 15px #001b3d88;position:relative;overflow:hidden}
+.lobby-tile b,.lobby-tile small{display:block;position:relative;z-index:1}
+.lobby-tile b{font-size:12px;letter-spacing:.6px}.lobby-tile small{font-size:9px;color:#c4eaff;margin-top:3px}
+.booster-tile{min-height:86px;padding:9px 10px 8px 73px}
+.tile-icon{position:absolute;left:9px;top:12px;width:52px;height:48px;display:grid;place-items:center;border-radius:6px;background:linear-gradient(145deg,#a7eaff,#1c6da4);font-size:30px;box-shadow:0 0 16px #54d6ff66}
+.mini-tile{min-height:58px;padding:8px 8px 8px 45px}.mini-tile span{position:absolute;left:10px;font-size:25px;top:12px}
+.operation-tile{height:108px;padding:64px 8px 7px;background:#0c3154}
+.operation-art{position:absolute;inset:0 0 39px;display:grid;place-items:center;font-size:47px;color:#bcefff;background:radial-gradient(circle at 55% 35%,#5cc9ed,#164e7b 65%,#0b2440)}
+.art-campaign{background:linear-gradient(135deg,#94b7c4,#234d69 45%,#0b223b)}
+.art-multi{background:linear-gradient(135deg,#66d8eb,#1b5792 55%,#111e48)}
+.lobby-hero{position:relative;display:flex;align-items:center;justify-content:center;min-width:0}
+.hero-glow{position:absolute;width:85%;height:80%;border-radius:50%;background:radial-gradient(ellipse,#a5efff99,#42a9e455 40%,transparent 70%);filter:blur(12px)}
+.hero-rings{position:absolute;width:70%;height:70%;border:1px solid #b9efff66;border-radius:50%;box-shadow:0 0 0 18px #80dfff13,0 0 0 38px #80dfff0c}
+.hero-figure{position:relative;width:185px;height:310px;filter:drop-shadow(0 12px 15px #00152caa);transform:scale(1.05);z-index:1}
+.hero-cape{position:absolute;left:48px;top:102px;width:112px;height:155px;background:linear-gradient(120deg,#14283c,#061626 70%);clip-path:polygon(15% 0,85% 0,100% 100%,52% 77%,0 100%);transform:skewY(-7deg)}
+.hero-backpack{position:absolute;left:35px;top:100px;width:32px;height:75px;border-radius:9px;background:linear-gradient(90deg,#263b4c,#0b1726);border:3px solid #687b87}
+.hero-leg{position:absolute;top:205px;width:37px;height:91px;background:linear-gradient(90deg,#101b2a,#53616b,#172637);border:3px solid #536a78;border-radius:9px;transform:skew(-7deg)}
+.hero-leg.left{left:49px}.hero-leg.right{left:100px;transform:skew(8deg)}
+.hero-body{position:absolute;left:42px;top:103px;width:104px;height:125px;border-radius:26px 25px 18px 18px;background:linear-gradient(100deg,#182b3b,#687987 38%,#1a2a39 70%,#0c1c2c);border:4px solid #8194a0;clip-path:polygon(18% 0,82% 0,100% 20%,90% 100%,10% 100%,0 20%)}
+.armor-mark{position:absolute;left:36px;top:43px;color:#d7b96c;font-weight:1000;font-size:18px;font-style:normal;text-shadow:0 2px 5px #000}
+.hero-arm{position:absolute;top:115px;width:33px;height:95px;border-radius:15px;background:linear-gradient(90deg,#1b2938,#7d8d98,#182638);border:3px solid #6d8492}
+.hero-arm.left{left:17px;transform:rotate(19deg)}.hero-arm.right{right:4px;transform:rotate(-25deg)}
+.hero-head{position:absolute;left:62px;top:34px;width:63px;height:79px;border-radius:24px 24px 18px 18px;background:linear-gradient(90deg,#283746,#9ba7ad,#293847);border:4px solid #81939c;z-index:3}
+.helmet{position:absolute;left:-5px;top:-10px;width:65px;height:40px;border-radius:28px 28px 9px 9px;background:linear-gradient(120deg,#687985,#182938 75%);border:3px solid #a5b1b7}
+.visor{position:absolute;left:4px;top:38px;width:48px;height:12px;background:linear-gradient(90deg,#0a1b2c,#68d9ee,#0a1b2c);border:2px solid #9bb9c5;border-radius:4px}
+.hero-rifle{position:absolute;right:-7px;top:135px;width:102px;height:14px;background:linear-gradient(#b6c3c8,#263849 45%,#0b1723);border:2px solid #899ca6;border-radius:3px;transform:rotate(-24deg);z-index:4;box-shadow:0 4px 0 #101c29}
+.hero-name{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap;text-shadow:0 2px 5px #001}
+.hero-name small,.hero-name b{display:block}.hero-name small{font-size:9px;letter-spacing:2px;color:#b8eaff}.hero-name b{font-size:20px;letter-spacing:2px}.hero-name span{font-size:11px;color:#ffdc7c}
+.hero-weapon{position:absolute;bottom:39px;right:0;padding:8px 12px;background:#0c3159dd;border:1px solid #8de2ff;border-radius:6px;font-size:11px}.hero-weapon b{color:#ffdc7c}
+.lobby-bottom{height:76px;display:grid;grid-template-columns:1fr 1.3fr 1fr;align-items:center;gap:12px;padding:8px 14px;background:linear-gradient(90deg,#071a31eF,#15436beF,#071a31eF);border-top:1px solid #8ddfff77;z-index:2}
+.squad{display:flex;align-items:center;gap:8px}.squad>span{font-size:28px;color:#ffcf5e}.squad b,.squad small{display:block}.squad b{font-size:11px;color:#ffdc7c}.squad small{font-size:9px}
+.lobby-start-wrap{text-align:center}.lobby-start{width:100%;min-height:47px;border:1px solid #fff1a6;background:linear-gradient(100deg,#ffe27a,#d88a29);color:#15243a;font-size:17px;letter-spacing:1px;box-shadow:0 4px 0 #794a1a}
+.lobby-start-wrap small{font-size:9px;color:#d3e9f7}
+.lobby-event{text-align:right}.lobby-event b,.lobby-event small{display:block}.lobby-event b{font-size:11px;color:#8eeaff}.lobby-event small{font-size:9px}
+.victory-dialog{width:min(570px,95vw);padding:24px;background:radial-gradient(ellipse at 50% 30%,#164a68,#07172a 72%);border:2px solid #20c9e9;box-shadow:0 0 50px #00bce966}
+.victory-wave{color:#45e5ff;font-size:22px;font-weight:900;letter-spacing:2px}
+.victory-title{font-size:clamp(42px,10vw,68px);font-weight:1000;color:#f8f6b5;text-shadow:0 0 22px #16d8ff,0 4px 2px #000;letter-spacing:3px}
+.victory-stars{display:flex;justify-content:center;gap:8px;margin:8px 0 18px}
+.victory-stars span{font-size:52px;color:#526574;text-shadow:0 4px 9px #000}.victory-stars span.earned{color:#ffda43;text-shadow:0 0 18px #ffcf35,0 4px 9px #000}
+.victory-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;text-align:left;font-size:11px;color:#d5f8ff;margin-bottom:18px}
+.victory-stats div{padding:10px 7px;background:#0c2b43;border:1px solid #1a8eb1;border-radius:5px}
+.victory-stats b{display:block;font-size:18px;color:#fff}
+.victory-next{width:100%;padding:14px;background:linear-gradient(90deg,#11d98c,#09a96f);color:#06251c;font-size:18px;border:1px solid #a5ffe1}
+.victory-hint{display:block;color:#a6cddd;font-size:10px;margin-top:10px}
+@media(max-width:650px){
+ .lobby{height:min(650px,94vh);min-height:500px}
+ .lobby-content{grid-template-columns:104px 1fr 112px;gap:5px;padding:10px 6px}
+ .lobby-label{font-size:10px}
+ .booster-tile{min-height:72px;padding:45px 4px 5px;text-align:center}
+ .tile-icon{top:3px;left:50%;transform:translateX(-50%);width:38px;height:36px;font-size:22px}
+ .mini-tile{padding:7px 3px 7px 30px}.mini-tile span{left:4px;font-size:20px}
+ .operation-tile{height:92px;padding:55px 3px 4px}.lobby-tile b{font-size:9px}.lobby-tile small{font-size:7px}
+ .hero-figure{transform:scale(.78)}.hero-name{bottom:0}.hero-name b{font-size:15px}
+ .hero-weapon{bottom:34px;right:-6px;padding:5px;font-size:8px}
+ .rank{min-width:0;padding:4px 5px;gap:3px}.rank-icon{font-size:18px}.rank small{font-size:7px}.rank b{font-size:8px}
+ .wallet{gap:4px;font-size:10px}.wallet span{padding:5px}
+ .lobby-bottom{height:68px;grid-template-columns:.8fr 1.4fr .8fr;padding:6px;gap:5px}
+ .squad>span{font-size:18px}.squad b,.lobby-event b{font-size:8px}.squad small,.lobby-event small{font-size:7px}
+ .lobby-start{font-size:12px;min-height:40px;padding:7px 2px}.lobby-start-wrap small{font-size:7px}
+ .victory-stars span{font-size:40px}.victory-stats{grid-template-columns:repeat(2,1fr);font-size:9px}
+}
+
+
+/* Landscape-first mobile play layout */
+@media (orientation:landscape) and (max-width:900px){
+ html,body{width:100%;height:100%;overflow:hidden}
+ body{margin:0}
+ main{width:100vw;height:100dvh;max-width:none;padding:4px 8px;display:flex;flex-direction:column;gap:4px}
+ header{padding:5px 9px;flex:0 0 auto}
+ header h1{font-size:18px}
+ .setup{margin:3px 0;padding:4px;gap:5px}
+ .hud{margin:3px 0;gap:5px}
+ .stat{padding:4px 7px}
+ .stat b{font-size:14px}
+ canvas{width:100%;height:auto;max-height:calc(100dvh - 150px);flex:1 1 auto;min-height:0;object-fit:contain}
+ .controls{margin:4px 0 0;padding:5px;gap:5px}
+ .pad button,.actions button{min-height:36px;padding:5px 9px}
+ .menus{margin-top:4px;gap:5px}
+ .menus button{min-height:32px;padding:4px 7px}
+ .note{display:none}
+ .lobby{height:96dvh;max-height:96dvh}
+}
+@media (orientation:portrait) and (max-width:700px){
+ .rotate-hint{display:flex}
+}
+.rotate-hint{
+ display:none;position:fixed;z-index:10001;left:50%;bottom:12px;transform:translateX(-50%);
+ align-items:center;gap:8px;padding:9px 14px;border-radius:30px;
+ color:#eaf8ff;background:#102b45ed;border:1px solid #64cfff;
+ box-shadow:0 4px 18px #0008;font-size:12px;font-weight:800;white-space:nowrap;
+}
+.rotate-hint span{font-size:19px}
+
+</style></head><body>
+<div class="rotate-hint"><span>📱↪</span> Rotate your phone to landscape for the best experience</div><main>
+<header><div><h1>⚔️ BATTLE ZONE</h1><div class="muted">ULTIMATE 2D • SURVIVAL ARENA</div></div><div class="muted">🪙 <b id="coins" class="gold">0</b> COINS<br>🏆 BEST <b id="best">0</b></div></header>
+<div class="setup">
+ <div><label for="mapPick">MAP</label><select id="mapPick"><option value="forest">🌲 Green Forest</option><option value="desert">🏜️ Desert Ruins</option><option value="ice">❄️ Frozen Base</option></select></div>
+ <div><label for="heroPick">CHARACTER</label><select id="heroPick"><option value="blue">🔵 Nova</option><option value="green">🟢 Ranger</option><option value="pink">🩷 Viper</option><option value="gold">🟡 Ace</option></select></div>
+ <div><label for="gunPick">EQUIPPED GUN</label><select id="gunPick"><option value="pistol">Pistol</option><option value="rifle">Rapid Rifle</option><option value="blaster">Heavy Blaster</option></select></div>
+</div>
+<section class="hud">
+ <div class="stat"><small>❤️ Health</small><b id="health">100</b></div><div class="stat"><small>🎯 Score</small><b id="score">0</b></div><div class="stat"><small>🌊 Wave</small><b id="wave">1</b></div><div class="stat"><small>👾 Enemies</small><b id="enemycount">0</b></div>
+</section>
+<canvas id="arena" width="960" height="540"></canvas>
+<div class="controls"><div class="pad"><span></span><button data-key="up">▲</button><span></span><button data-key="left">◀</button><button data-key="down">▼</button><button data-key="right">▶</button></div>
+<div class="actions"><button class="fire" id="fire">🔫 FIRE</button><button class="dash" id="dash">⚡ DASH</button><button class="reload" id="reload">↻ RELOAD</button></div></div>
+<div class="menus"><button id="shop">🛒 GUN SHOP</button><button id="characterShop">🧑 CHARACTER SHOP</button><button id="missions">📜 MISSIONS</button></div>
+<div class="menus"><button id="pause">Ⅱ PAUSE</button><button id="sound">🔊 SOUND ON</button><button id="restart">↻ RESTART</button></div>
+<div class="menus"><button id="help">❔ HOW TO PLAY</button><span></span><span></span></div>
+<div class="note">Move with arrows / WASD • FIRE auto-aims at nearest enemy • DASH to dodge • Boss appears every 5 waves • Earn coins and unlock stronger guns.</div>
+</main>
+<div class="overlay lobby-overlay" id="overlay">
+ <div class="lobby">
+  <div class="lobby-top">
+   <div class="rank"><span class="rank-icon">◈</span><span><small>RANK</small><b>ROOKIE I</b></span><i></i></div>
+   <div class="rank"><span class="rank-icon gold-icon">✦</span><span><small>SEASON</small><b>SURVIVOR</b></span></div>
+   <div class="wallet"><span>🪙 <b id="menuCoins">0</b></span><span>💎 <b>0</b></span></div>
+  </div>
+  <div class="lobby-content">
+   <section class="lobby-left">
+    <div class="lobby-label">BOOSTERS</div>
+    <button class="lobby-tile booster-tile" id="menuGun"><span class="tile-icon">📦</span><b>GUN CRATE</b><small>WEAPON SHOP</small></button>
+    <button class="lobby-tile booster-tile" id="menuCharacter"><span class="tile-icon">🪖</span><b>OPERATORS</b><small>CHARACTER SHOP</small></button>
+    <button class="lobby-tile mini-tile" id="menuMissions"><span>📜</span><b>MISSIONS</b><small>DAILY OBJECTIVES</small></button>
+   </section>
+   <section class="lobby-hero">
+    <div class="hero-glow"></div><div class="hero-rings"></div>
+    <div class="hero-figure" aria-label="Armoured sci-fi soldier">
+     <div class="hero-cape"></div><div class="hero-backpack"></div>
+     <div class="hero-leg left"></div><div class="hero-leg right"></div>
+     <div class="hero-body"><i class="armor-mark">BZ</i></div>
+     <div class="hero-arm left"></div><div class="hero-arm right"></div>
+     <div class="hero-head"><div class="helmet"></div><div class="visor"></div></div>
+     <div class="hero-rifle"></div>
+    </div>
+    <div class="hero-name"><small>SELECTED OPERATOR</small><b>NOVA <span>• LV. 01</span></b></div>
+    <div class="hero-weapon">⚔ &nbsp; <span>ASSAULT RIFLE</span> <b>MK-I</b></div>
+   </section>
+   <section class="lobby-right">
+    <div class="lobby-label">OPERATIONS</div>
+    <button class="lobby-tile operation-tile" id="menuMissions2"><span class="operation-art art-mission">⌖</span><b>MISSIONS</b><small>COMPLETE OBJECTIVES</small></button>
+    <button class="lobby-tile operation-tile" id="menuCampaign"><span class="operation-art art-campaign">▤</span><b>CAMPAIGN</b><small>ARENA SURVIVAL</small></button>
+    <button class="lobby-tile operation-tile" id="menuMultiplayer"><span class="operation-art art-multi">⚔</span><b>SOLO ARENA</b><small>ENDLESS WAVES</small></button>
+   </section>
+  </div>
+  <div class="lobby-bottom">
+   <div class="squad"><span>✦</span><div><b>YOUR SQUAD</b><small>IS READY FOR BATTLE!</small></div></div>
+   <div class="lobby-start-wrap"><button id="start" class="lobby-start">▶ &nbsp; START BATTLE</button><small>BEST SCORE: <b id="menuBest">0</b></small></div>
+   <div class="lobby-event"><b>⚡ DAILY EVENT</b><small>WAVE CHALLENGE</small></div>
+  </div>
+ </div>
+</div>
+<div class="overlay hidden" id="waveBanner"><div class="dialog victory-dialog">
+ <div class="victory-wave" id="waveNumber">WAVE 1</div><div class="victory-title">VICTORY!</div>
+ <div class="victory-stars" id="victoryStars"><span>★</span><span>★</span><span>★</span></div>
+ <div class="victory-stats"><div>✦ KILLS <b id="victoryKills">0</b></div><div>✦ SCORE <b id="victoryScore">0</b></div><div>⏱ TIME <b id="victoryTime">0.0s</b></div><div>✦ REWARD <b id="victoryReward">0 COINS</b></div></div>
+ <button id="nextWave" class="victory-next">▶ &nbsp; NEXT WAVE</button>
+ <small class="victory-hint">★★★ FAST CLEAR &nbsp; • &nbsp; ★★ GOOD TIME &nbsp; • &nbsp; ★ CLEAR THE WAVE</small><small class="victory-hint">Continue to enter the next arena</small>
+ </div></div>
+<div class="overlay hidden" id="modal"><div class="dialog"><h2 id="modalTitle">GUN SHOP</h2><div id="modalBody"></div><button id="closeModal">CLOSE</button></div></div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),c=$('arena'),ctx=c.getContext('2d'),W=960,H=540;
+const guns={pistol:{name:'Pistol',cost:0,damage:1,rate:15,ammo:18,speed:8.5},rifle:{name:'Rapid Rifle',cost:120,damage:1,rate:6,ammo:36,speed:10},blaster:{name:'Heavy Blaster',cost:220,damage:3,rate:22,ammo:10,speed:7}};
+const heroes={blue:{color:'#39bdf2',name:'Nova',cost:0,gear:'#d9f5ff'},green:{color:'#54d68a',name:'Ranger',cost:100,gear:'#c4ffd9'},pink:{color:'#fa83c4',name:'Viper',cost:150,gear:'#ffe0f2'},gold:{color:'#ffd166',name:'Ace',cost:250,gear:'#fff0b8'}};
+const maps={forest:{bg:'#183b31',grid:'rgba(190,235,205,.08)',ob:'#526c53',edge:'#8ba77d'},desert:{bg:'#72502e',grid:'rgba(255,230,170,.09)',ob:'#a77a45',edge:'#e1b978'},ice:{bg:'#24445b',grid:'rgba(205,240,255,.1)',ob:'#60899d',edge:'#a9d9e8'}};
+const owned=JSON.parse(localStorage.getItem('bz_owned')||'["pistol"]');const ownedHeroes=JSON.parse(localStorage.getItem('bz_heroes')||'["blue"]');let coins=Number(localStorage.getItem('bz_coins')||0),best=Number(localStorage.getItem('bz_best')||0),completed=JSON.parse(localStorage.getItem('bz_missions')||'{}');
+let player,enemies,bullets,particles,drops,score,wave,hp,frame,spawnClock,running=false,paused=false,fireHeld=false,ammo,reloadClock=0,dashCooldown=0,soundOn=true,bossWave=0,kills=0,missionClaimed=false,spawnedThisWave=0,waveQuota=6,waveElapsedFrames=0;
+const keys={up:false,down:false,left:false,right:false};
+function persist(){localStorage.setItem('bz_coins',coins);localStorage.setItem('bz_owned',JSON.stringify(owned));localStorage.setItem('bz_missions',JSON.stringify(completed));localStorage.setItem('bz_heroes',JSON.stringify(ownedHeroes));$('coins').textContent=coins;$('menuCoins').textContent=coins}
+function gun(){return guns[$('gunPick').value]||guns.pistol}
+function refreshPicks(){[...$('gunPick').options].forEach(o=>{o.disabled=!owned.includes(o.value)});if(!owned.includes($('gunPick').value))$('gunPick').value='pistol';[...$('heroPick').options].forEach(o=>{o.disabled=!ownedHeroes.includes(o.value)});if(!ownedHeroes.includes($('heroPick').value))$('heroPick').value='blue'}
+function hud(){$('health').textContent=hp;$('score').textContent=score;$('wave').textContent=wave;$('enemycount').textContent=enemies.length;$('coins').textContent=coins;$('best').textContent=best}
+function reset(){player={x:480,y:270,r:15,speed:3.3,inv:0};enemies=[];bullets=[];particles=[];drops=[];score=0;wave=1;hp=100;frame=0;spawnClock=0;ammo=gun().ammo;reloadClock=0;dashCooldown=0;bossWave=0;kills=0;paused=false;spawnedThisWave=0;waveQuota=6;waveElapsedFrames=0;running=true;Object.keys(keys).forEach(k=>keys[k]=false);$('pause').textContent='Ⅱ PAUSE';hud()}
+function nearest(){let t=null,d=1e9;for(const e of enemies){let n=Math.hypot(e.x-player.x,e.y-player.y);if(n<d){d=n;t=e}}return t}
+function beep(f=440,d=.05){if(!soundOn)return;try{let a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.frequency.value=f;g.gain.value=.025;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+d);o.onended=()=>a.close()}catch(e){}}
+function burst(x,y,color,n=8){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=Math.random()*3+.4;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:25,color})}}
+function shoot(){if(!running||paused||reloadClock>0||ammo<=0)return;let g=gun(),e=nearest(),a=e?Math.atan2(e.y-player.y,e.x-player.x):0;bullets.push({x:player.x+Math.cos(a)*19,y:player.y+Math.sin(a)*19,vx:Math.cos(a)*g.speed,vy:Math.sin(a)*g.speed,life:70,r:g.damage>1?6:4,damage:g.damage});ammo--;beep(560,.035);if(!ammo)reload()}
+function reload(){if(!reloadClock&&ammo<gun().ammo)reloadClock=75}
+function dash(){if(!running||paused||dashCooldown)return;let dx=(keys.right?1:0)-(keys.left?1:0),dy=(keys.down?1:0)-(keys.up?1:0);if(!dx&&!dy){let e=nearest();dx=e?player.x-e.x:1;dy=e?player.y-e.y:0}let m=Math.hypot(dx,dy)||1;player.x=Math.max(20,Math.min(942,player.x+dx/m*95));player.y=Math.max(20,Math.min(522,player.y+dy/m*95));player.inv=32;dashCooldown=145;burst(player.x,player.y,'#65dfff',12);beep(280,.08)}
+function spawn(){
+ let side=Math.floor(Math.random()*4),x=side===0?12:side===1?948:Math.random()*936+12,y=side===2?12:side===3?528:Math.random()*516+12;
+ let boss=wave%5===0&&spawnedThisWave===waveQuota-1&&bossWave!==wave;
+ if(boss){bossWave=wave;enemies.push({x,y,r:31,speed:.62+wave*.012,hp:18+wave*3,maxHp:18+wave*3,type:'boss',boss:true,hit:0});spawnedThisWave++;return}
+ let type=Math.random()<.18?'runner':Math.random()<.18?'tank':'normal';enemies.push({x,y,r:type==='tank'?19:type==='runner'?10:14,speed:(type==='runner'?1.55:type==='tank'?.58:.85)+Math.min(wave*.03,.55),hp:type==='tank'?3:1,maxHp:type==='tank'?3:1,type,hit:0});spawnedThisWave++
+}
+function update(){
+ if(!running||paused)return;frame++;waveElapsedFrames++;spawnClock++;
+ if(keys.up)player.y-=player.speed;if(keys.down)player.y+=player.speed;if(keys.left)player.x-=player.speed;if(keys.right)player.x+=player.speed;
+ player.x=Math.max(18,Math.min(942,player.x));player.y=Math.max(18,Math.min(522,player.y));if(player.inv>0)player.inv--;if(dashCooldown>0)dashCooldown--;
+ if(fireHeld&&frame%gun().rate===0)shoot();if(reloadClock>0&&!--reloadClock){ammo=gun().ammo;beep(780,.07)}
+ if(spawnedThisWave<waveQuota&&spawnClock>Math.max(19,76-wave*2)){spawn();spawnClock=0}
+ for(const e of enemies){let a=Math.atan2(player.y-e.y,player.x-e.x);e.x+=Math.cos(a)*e.speed;e.y+=Math.sin(a)*e.speed;if(Math.hypot(e.x-player.x,e.y-player.y)<e.r+player.r&&player.inv===0){hp=Math.max(0,hp-(e.boss?24:e.type==='tank'?16:10));player.inv=35;burst(player.x,player.y,'#ff8888',6);if(!hp)gameOver()}}
+ for(const b of bullets){b.x+=b.vx;b.y+=b.vy;b.life--;for(const e of enemies){if(e.hp>0&&Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){e.hp-=b.damage;b.life=0;e.hit=5;burst(e.x,e.y,'#ffc06a',4);if(e.hp<=0){kills++;score+=e.boss?150:e.type==='tank'?30:e.type==='runner'?15:10;coins+=e.boss?80: e.type==='tank'?8:4;persist();if(Math.random()<.14)drops.push({x:e.x,y:e.y,type:Math.random()<.5?'health':'ammo',life:650});burst(e.x,e.y,e.boss?'#d7a5ff':'#ff6969',e.boss?24:10)}break}}}
+ bullets=bullets.filter(b=>b.life>0&&b.x>-10&&b.x<970&&b.y>-10&&b.y<550);enemies=enemies.filter(e=>e.hp>0);
+ for(const d of drops){d.life--;if(Math.hypot(d.x-player.x,d.y-player.y)<25){if(d.type==='health')hp=Math.min(100,hp+25);else ammo=gun().ammo;d.life=0;beep(850,.08);burst(d.x,d.y,'#8bffb2',10)}}drops=drops.filter(d=>d.life>0);
+ for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96;p.life--}particles=particles.filter(p=>p.life>0);
+ if(frame%5===0)hud();
+ if(spawnedThisWave>=waveQuota&&enemies.length===0){completeWave()}
+}
+
+function drawEnemy(e){
+ const boss=!!e.boss,scale=boss?1.85:e.type==='tank'?1.22:e.type==='runner'?.78:1;
+ const base=boss?'#7137a8':e.type==='tank'?'#8c55b8':e.type==='runner'?'#c87935':'#b84c58';
+ const trim=boss?'#f1c75b':e.type==='tank'?'#e0b5ff':'#ffd0a1';
+ const ang=Math.atan2(player.y-e.y,player.x-e.x);
+ ctx.save();ctx.translate(e.x,e.y);ctx.rotate(ang);ctx.scale(scale,scale);
+ ctx.shadowBlur=boss?20:9;ctx.shadowColor=base;
+ // cape/backpack and armored legs
+ ctx.fillStyle=boss?'#381d59':'#29344a';ctx.beginPath();ctx.moveTo(-9,-5);ctx.lineTo(-17,13);ctx.lineTo(-8,11);ctx.lineTo(0,16);ctx.lineTo(8,11);ctx.lineTo(13,-5);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#202b3d';ctx.fillRect(-8,5,6,13);ctx.fillRect(3,5,6,13);
+ ctx.fillStyle=base;ctx.fillRect(-10,13,9,5);ctx.fillRect(2,13,9,5);
+ // shoulders and torso armor
+ ctx.fillStyle=base;ctx.beginPath();ctx.roundRect(-12,-9,24,21,6);ctx.fill();
+ ctx.fillStyle=trim;ctx.fillRect(-13,-8,7,8);ctx.fillRect(6,-8,7,8);
+ ctx.fillStyle=boss?'#3a2054':'#26364d';ctx.fillRect(-6,-6,12,13);
+ ctx.fillStyle=trim;ctx.beginPath();ctx.moveTo(0,-5);ctx.lineTo(4,1);ctx.lineTo(0,6);ctx.lineTo(-4,1);ctx.closePath();ctx.fill();
+ // arms and oversized boss gauntlets
+ ctx.fillStyle=base;ctx.fillRect(-16,-5,5,13);ctx.fillRect(11,-5,5,13);
+ if(boss){ctx.fillStyle=trim;ctx.fillRect(-18,3,8,8);ctx.fillRect(10,3,8,8)}
+ // head, helmet, glowing visor
+ ctx.fillStyle=boss?'#c7a1e8':'#d9b39b';ctx.beginPath();ctx.arc(0,-15,8,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=base;ctx.beginPath();ctx.arc(0,-18,10,Math.PI,Math.PI*2);ctx.lineTo(10,-14);ctx.lineTo(-10,-14);ctx.closePath();ctx.fill();
+ ctx.fillStyle=boss?'#ffe36e':'#ffdf91';ctx.fillRect(1,-17,8,3);
+ if(boss){
+   // unmistakable crown horns and central crest
+   ctx.fillStyle='#f3c64e';ctx.beginPath();ctx.moveTo(-9,-23);ctx.lineTo(-17,-34);ctx.lineTo(-5,-29);ctx.lineTo(0,-38);ctx.lineTo(5,-29);ctx.lineTo(17,-34);ctx.lineTo(9,-23);ctx.closePath();ctx.fill();
+   ctx.strokeStyle='#ffe99a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,23,-2.5,2.5);ctx.stroke();
+ }
+ // weapon silhouette
+ ctx.fillStyle='#18263b';ctx.fillRect(8,-2,boss?19:14,5);ctx.fillStyle=trim;ctx.fillRect(boss?22:18,-3,4,2);
+ ctx.restore();ctx.shadowBlur=0;
+ if(boss){
+   const bw=76,bh=8,by=e.y-e.r-27;
+   ctx.fillStyle='#251637';ctx.fillRect(e.x-bw/2,by,bw,bh);
+   ctx.fillStyle='#e3a5ff';ctx.fillRect(e.x-bw/2,by,bw*Math.max(0,e.hp/e.maxHp),bh);
+   ctx.strokeStyle='#f4d58a';ctx.lineWidth=1.5;ctx.strokeRect(e.x-bw/2,by,bw,bh);
+   ctx.fillStyle='#fff0b8';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('BOSS',e.x,by-5);ctx.textAlign='left';
+ }
+}
+
+function draw(){
+ let m=maps[$('mapPick').value]||maps.forest;ctx.clearRect(0,0,W,H);ctx.fillStyle=m.bg;ctx.fillRect(0,0,W,H);
+ // arena floor lighting and outer energy boundary
+ const glow=ctx.createRadialGradient(W/2,H/2,40,W/2,H/2,Math.max(W,H)*.72);glow.addColorStop(0,'rgba(255,190,150,.16)');glow.addColorStop(1,'rgba(12,8,30,.38)');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+ ctx.save();ctx.strokeStyle='rgba(41,178,255,.85)';ctx.lineWidth=8;ctx.shadowBlur=22;ctx.shadowColor='#167dff';ctx.beginPath();ctx.arc(W/2,H/2,Math.min(W,H)*.43,0,Math.PI*2);ctx.stroke();ctx.restore();ctx.strokeStyle=m.grid;for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ let obs=$('mapPick').value==='desert'?[[90,110,95,42],[580,80,65,90],[155,440,110,42],[540,425,90,50],[350,80,70,30],[380,500,100,35],[300,260,55,48]]:$('mapPick').value==='ice'?[[105,100,80,45],[590,85,55,85],[150,440,110,38],[545,425,80,48],[350,75,60,28],[375,500,100,30],[310,260,42,42]]:[[105,105,85,38],[590,85,50,82],[145,440,110,38],[545,425,80,48],[350,75,60,28],[375,500,100,30],[310,260,42,42],[665,285,34,70]];
+ for(let [x,y,w,h] of obs){ctx.fillStyle=m.ob;ctx.fillRect(x,y,w,h);ctx.strokeStyle=m.edge;ctx.strokeRect(x,y,w,h)}
+ for(const d of drops){ctx.shadowBlur=15;ctx.shadowColor=d.type==='health'?'#55ff9a':'#ffd166';ctx.fillStyle=d.type==='health'?'#55ff9a':'#ffd166';ctx.beginPath();ctx.arc(d.x,d.y,10,0,7);ctx.fill();ctx.shadowBlur=0}
+ for(const b of bullets){ctx.save();ctx.shadowBlur=18;ctx.shadowColor='#ff5b68';ctx.fillStyle='#ffecb0';ctx.beginPath();ctx.arc(b.x,b.y,b.r+1,0,Math.PI*2);ctx.fill();ctx.restore()}
+ for(const e of enemies){drawEnemy(e);if(e.hit)e.hit--}
+ for(const p of particles){ctx.globalAlpha=p.life/25;ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,4,4)}ctx.globalAlpha=1;
+ let hero=heroes[$('heroPick').value]||heroes.blue,col=hero.color;let target=nearest(),face=target?Math.atan2(target.y-player.y,target.x-player.x):0;ctx.save();ctx.translate(player.x,player.y);ctx.rotate(face);if(player.inv&&Math.floor(frame/4)%2)ctx.globalAlpha=.4;ctx.shadowBlur=13;ctx.shadowColor=col;
+ // boots and legs
+ ctx.fillStyle='#182334';ctx.fillRect(-9,5,7,12);ctx.fillRect(3,5,7,12);ctx.fillStyle='#263b52';ctx.fillRect(-11,14,9,4);ctx.fillRect(3,14,9,4);
+ // backpack and arms
+ ctx.fillStyle='#263b52';ctx.fillRect(-13,-8,6,15);ctx.fillStyle=hero.gear;ctx.fillRect(-15,-7,5,10);ctx.fillRect(9,-7,7,10);
+ // torso armor
+ ctx.fillStyle=col;ctx.beginPath();ctx.roundRect(-10,-10,20,20,6);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#203047';ctx.fillRect(-5,-7,10,11);ctx.fillStyle=hero.gear;ctx.fillRect(-3,-5,6,4);
+ // head, helmet and visor
+ ctx.fillStyle='#f0c6a2';ctx.beginPath();ctx.arc(0,-15,8,0,Math.PI*2);ctx.fill();ctx.fillStyle=col;ctx.beginPath();ctx.arc(0,-18,9,Math.PI,Math.PI*2);ctx.lineTo(9,-15);ctx.lineTo(-9,-15);ctx.fill();ctx.fillStyle='#102033';ctx.fillRect(2,-17,6,3);
+ // equipped blaster pointing forward
+ ctx.fillStyle='#aebdd0';ctx.fillRect(8,-3,17,5);ctx.fillStyle='#354b66';ctx.fillRect(17,-5,8,3);ctx.restore();
+ ctx.fillStyle='#fff';ctx.font='bold 15px system-ui';ctx.fillText((reloadClock?'RELOADING':'AMMO '+ammo+'/'+gun().ammo),16,25);
+ if(paused){ctx.fillStyle='#07101baa';ctx.fillRect(0,0,W,H);ctx.fillStyle='white';ctx.textAlign='center';ctx.font='bold 42px system-ui';ctx.fillText('PAUSED',400,300);ctx.textAlign='left'}
+}
+function completeWave(){
+ running=false;fireHeld=false;
+ const seconds=waveElapsedFrames/60;
+ // Time limits scale with the number of enemies in each wave.
+ const threeStarLimit=10+waveQuota*1.8;
+ const twoStarLimit=18+waveQuota*2.7;
+ const stars=seconds<=threeStarLimit?3:seconds<=twoStarLimit?2:1;
+ const reward=25+wave*5+(stars-1)*15;
+ coins+=reward;persist();
+ $('waveNumber').textContent=`WAVE ${wave} CLEARED`;
+ $('victoryKills').textContent=kills;
+ $('victoryScore').textContent=score;
+ $('victoryTime').textContent=`${seconds.toFixed(1)}s`;
+ $('victoryReward').textContent=`${reward} COINS`;
+ [...$('victoryStars').children].forEach((star,i)=>star.classList.toggle('earned',i<stars));
+ $('waveBanner').classList.remove('hidden');
+}
+function nextWave(){wave++;spawnedThisWave=0;waveQuota=6+wave*2;waveElapsedFrames=0;spawnClock=0;enemies=[];bullets=[];drops=[];running=true;$('waveBanner').classList.add('hidden');hud();}
+function gameOver(){running=false;fireHeld=false;best=Math.max(best,score);localStorage.setItem('bz_best',best);hud();$('menuBest').textContent=best;$('overlayTitle').textContent='GAME OVER';$('overlayText').textContent=`Score ${score} • Wave ${wave} • Enemies defeated ${kills}. Coins earned this run are saved!`;$('start').textContent='↻ PLAY AGAIN';$('overlay').classList.remove('hidden')}
+
+async function requestLandscapeMode(){
+ try{
+  if(!document.fullscreenElement && document.documentElement.requestFullscreen){
+   await document.documentElement.requestFullscreen();
+  }
+ }catch(e){}
+ try{
+  if(screen.orientation && screen.orientation.lock){
+   await screen.orientation.lock('landscape');
+  }
+ }catch(e){}
+}
+
+function start(){requestLandscapeMode();refreshPicks();reset();$('overlayTitle').textContent='BATTLE ZONE';$('overlayText').textContent='Gear up, choose your fighter and survive every wave.';$('start').textContent='▶ START GAME';$('overlay').classList.add('hidden')}
+function togglePause(){if(!running)return;paused=!paused;$('pause').textContent=paused?'▶ RESUME':'Ⅱ PAUSE'}
+function showModal(title,body){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modal').classList.remove('hidden')}
+function shop(){let body=Object.entries(guns).map(([id,g])=>`<div class="modalrow"><span><b>${g.name}</b><br>Damage ${g.damage} • Ammo ${g.ammo} • ${g.rate<=6?'Fast fire':'Fire rate '+g.rate}</span><span>${owned.includes(id)?'<b class="gold">OWNED</b>':`<button class="smallbtn" data-buy="${id}">🪙 ${g.cost}</button>`}</span></div>`).join('');showModal('GUN SHOP',`<p>Coins: <b class="gold">${coins}</b>. Buy a gun, then equip it in the menu.</p>${body}`);document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{let id=b.dataset.buy,g=guns[id];if(coins>=g.cost&&!owned.includes(id)){coins-=g.cost;owned.push(id);persist();refreshPicks();shop()}else b.textContent='Need coins'})}
+function characterShop(){let body=Object.entries(heroes).map(([id,h])=>{let isOwned=ownedHeroes.includes(id),equipped=$('heroPick').value===id;return `<div class="modalrow"><span><b style="color:${h.color}">● ${h.name}</b><br>${id==='blue'?'Starter scout':id==='green'?'Forest ranger':id==='pink'?'Swift elite':'Golden champion'}</span><span>${equipped?'<b class="gold">EQUIPPED</b>':isOwned?`<button class="smallbtn" data-equip-hero="${id}">EQUIP</button>`:`<button class="smallbtn" data-buy-hero="${id}">🪙 ${h.cost}</button>`}</span></div>`}).join('');showModal('CHARACTER SHOP',`<p>Coins: <b class="gold">${coins}</b>. Unlock a hero and equip them before your next battle.</p>${body}`);document.querySelectorAll('[data-buy-hero]').forEach(b=>b.onclick=()=>{let id=b.dataset.buyHero,h=heroes[id];if(coins>=h.cost&&!ownedHeroes.includes(id)){coins-=h.cost;ownedHeroes.push(id);persist();refreshPicks();characterShop()}else b.textContent='Need coins'});document.querySelectorAll('[data-equip-hero]').forEach(b=>b.onclick=()=>{$('heroPick').value=b.dataset.equipHero;characterShop()})}
+function missions(){let tasks=[{id:'kills',name:'Defeat 10 enemies',goal:10,progress:kills,reward:35},{id:'score',name:'Score 100 points',goal:100,progress:score,reward:40},{id:'wave',name:'Reach wave 3',goal:3,progress:wave,reward:55}];let body=tasks.map(t=>{let done=!!completed[t.id],ready=t.progress>=t.goal&&!done;return `<div class="modalrow"><span><b>${t.name}</b><br>${Math.min(t.progress,t.goal)}/${t.goal} • Reward 🪙 ${t.reward}</span><span>${done?'<b class="gold">CLAIMED</b>':`<button class="smallbtn" data-claim="${t.id}" ${ready?'':'disabled'}>${ready?'CLAIM':'LOCKED'}</button>`}</span></div>`}).join('');showModal('MISSIONS & REWARDS',`<p>Complete objectives in a run to claim bonus coins.</p>${body}`);document.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>{let t=tasks.find(x=>x.id===b.dataset.claim);if(t&&t.progress>=t.goal&&!completed[t.id]){completed[t.id]=true;coins+=t.reward;persist();missions()}})}
+document.querySelectorAll('[data-key]').forEach(b=>{let k=b.dataset.key,down=e=>{e.preventDefault();keys[k]=true},up=e=>{e.preventDefault();keys[k]=false};b.addEventListener('pointerdown',down);['pointerup','pointerleave','pointercancel'].forEach(v=>b.addEventListener(v,up))});
+$('fire').addEventListener('pointerdown',e=>{e.preventDefault();fireHeld=true;shoot()});['pointerup','pointerleave','pointercancel'].forEach(v=>$('fire').addEventListener(v,()=>fireHeld=false));
+$('dash').onclick=dash;$('reload').onclick=reload;$('pause').onclick=togglePause;$('shop').onclick=shop;$('characterShop').onclick=characterShop;$('missions').onclick=missions;
+$('menuGun').onclick=shop;$('menuCharacter').onclick=characterShop;$('menuMissions').onclick=missions;$('menuMissions2').onclick=missions;$('menuCampaign').onclick=()=>{ $('overlay').classList.add('hidden');start() };$('menuMultiplayer').onclick=()=>{ $('overlay').classList.add('hidden');start() };$('nextWave').onclick=nextWave;
+$('closeModal').onclick=()=>$('modal').classList.add('hidden');
+$('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'🔊 SOUND ON':'🔇 SOUND OFF'};
+$('restart').onclick=()=>{running=false;$('overlayTitle').textContent='BATTLE ZONE';$('overlayText').textContent='Ready for another round?';$('start').textContent='▶ START GAME';$('overlay').classList.remove('hidden')};
+$('start').onclick=e=>{e.preventDefault();start()};$('start').addEventListener('pointerup',e=>{e.preventDefault();start()});
+$('help').onclick=()=>showModal('HOW TO PLAY','<p>Move with the arrow buttons or WASD. FIRE automatically aims at the nearest enemy. DASH gives a quick escape. RELOAD refills your equipped gun. Pick up green health and yellow ammo drops. A boss arrives every fifth wave. Earn coins by defeating enemies, then buy guns in the Gun Shop and unlock heroes in the Character Shop. Equip your hero from the Character menu. Missions can be claimed from the Missions menu.</p>');
+window.addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='w'||k==='arrowup')keys.up=true;if(k==='s'||k==='arrowdown')keys.down=true;if(k==='a'||k==='arrowleft')keys.left=true;if(k==='d'||k==='arrowright')keys.right=true;if(k===' '&&!e.repeat){fireHeld=true;shoot()}if(k==='shift')dash();if(k==='r')reload();if(k==='escape')togglePause()});
+window.addEventListener('keyup',e=>{let k=e.key.toLowerCase();if(k==='w'||k==='arrowup')keys.up=false;if(k==='s'||k==='arrowdown')keys.down=false;if(k==='a'||k==='arrowleft')keys.left=false;if(k==='d'||k==='arrowright')keys.right=false;if(k===' ')fireHeld=false});
+$('coins').textContent=coins;$('best').textContent=best;$('menuCoins').textContent=coins;$('menuBest').textContent=best;refreshPicks();reset();running=false;function loop(){update();draw();requestAnimationFrame(loop)}hud();loop();
+})();
+</script></body></html>
