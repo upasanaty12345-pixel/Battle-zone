@@ -429,7 +429,7 @@ async function requestLandscapeMode(){
  }catch(e){}
 }
 
-function start(){requestLandscapeMode();refreshPicks();reset();$('overlayTitle').textContent='BATTLE ZONE';$('overlayText').textContent='Gear up, choose your fighter and survive every wave.';$('start').textContent='▶ START GAME';$('overlay').classList.add('hidden')}
+function start(){refreshPicks();reset();$('overlayTitle').textContent='BATTLE ZONE';$('overlayText').textContent='Gear up, choose your fighter and survive every wave.';$('start').textContent='▶ START GAME';$('overlay').classList.add('hidden')}
 function togglePause(){if(!running)return;paused=!paused;$('pause').textContent=paused?'▶ RESUME':'Ⅱ PAUSE'}
 function showModal(title,body){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modal').classList.remove('hidden')}
 function shop(){let body=Object.entries(guns).map(([id,g])=>`<div class="modalrow"><span><b>${g.name}</b><br>Damage ${g.damage} • Ammo ${g.ammo} • ${g.rate<=6?'Fast fire':'Fire rate '+g.rate}</span><span>${owned.includes(id)?'<b class="gold">OWNED</b>':`<button class="smallbtn" data-buy="${id}">🪙 ${g.cost}</button>`}</span></div>`).join('');showModal('GUN SHOP',`<p>Coins: <b class="gold">${coins}</b>. Buy a gun, then equip it in the menu.</p>${body}`);document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{let id=b.dataset.buy,g=guns[id];if(coins>=g.cost&&!owned.includes(id)){coins-=g.cost;owned.push(id);persist();refreshPicks();shop()}else b.textContent='Need coins'})}
